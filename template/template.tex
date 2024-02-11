@@ -1,0 +1,77 @@
+%! TeX program = lualatex
+
+\documentclass{standalone}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{luacode}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usetikzlibrary{matrix}
+
+\usepackage{fontspec}
+\setmainfont{Times}
+\setsansfont{Helvetica}
+
+\newcommand{\numCol}{2}
+
+\newcommand{\cellHeight}{9cm}
+
+\newcommand{\columnSep}{0.5cm}
+\newcommand{\rowSep}{0.5cm}
+
+\begin{luacode*}
+    local graph_filepath_list = {
+{{GRAPH_LIST}}
+    }
+
+    local default_label_list = 'abcdefghijklmnopqrstuvwxyz'
+    function get_label(i_graph)
+	return '(' .. default_label_list:sub(i_graph, i_graph) .. ')'
+    end
+
+    local graph_node_format = '\\node [anchor=north west, inner sep=0] (graph_%d) { \\centering \\includegraphics[height=%s]{%s} };'
+    local label_node_format = '\\node [anchor=north west, inner sep=0] (label_%d) { \\sffamily \\bf \\Large %s };'
+
+    local n_graph = #graph_filepath_list
+
+    function draw_graph_matrix_cell(n_col, cell_height)
+	local i_graph = 1
+	local i_row = 1
+	while true do
+	    for i_col = 1, n_col do
+		local trailing_seq = '&'
+		if i_col == n_col then
+		    trailing_seq = '\\\\'
+		end
+
+		local graph_node_command = ''
+		local label_node_command = ''
+		if i_graph <= n_graph then
+		    graph_node_command = graph_node_format:format(i_graph, cell_height, graph_filepath_list[i_graph])
+		    label_node_command = label_node_format:format(i_graph, get_label(i_graph))
+		end
+
+		tex.sprint(graph_node_command)
+		tex.sprint(label_node_command)
+		tex.sprint(trailing_seq)
+
+		i_graph = i_graph + 1
+	    end
+
+	    i_row = i_row + 1
+
+	    if i_graph > n_graph then
+		break
+	    end
+	end
+    end
+\end{luacode*}
+
+\newcommand{\drawGraphMatrixCell}{\directlua{draw_graph_matrix_cell(\numCol, \luastringN{\cellHeight})}}
+
+\begin{document}
+\begin{tikzpicture}
+    \matrix [column sep=\columnSep, row sep=\rowSep] (graph_matrix) at (0, 0) { \drawGraphMatrixCell };
+\end{tikzpicture}
+\end{document}
